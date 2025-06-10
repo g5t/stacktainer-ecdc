@@ -28,7 +28,10 @@ conan profile new --detect default
 conan profile update settings.compiler.libcxx=libstdc++11 default
 conan remote add ecdc-conan-release https://artifactory.esss.lu.se/artifactory/api/conan/ecdc-conan-release
 
+conan config install http://github.com/ess-dmsc/conan-configuration.git
+
 git clone -b {{ efu_branch }} --depth 1 {{ efu_remote }} /efu/repo
+mkdir -p /efu/build && cd /efu/build && conan install /efu/repo --build=missing --profile=linux_x86_64_gcc11 && cd /
 cmake -S /efu/repo -B /efu/build -DCMAKE_BUILD_TYPE=Release
 cmake --build /efu/build --target allefus -j
 /root/.local/pipx/venvs/auditwheel/bin/python /copylibs.py -o /lib/ -d conan /efu/build/bin/*
