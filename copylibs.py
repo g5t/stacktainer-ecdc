@@ -33,6 +33,7 @@ def copy_libs_old(dest: Path, libs: dict[str, dict]):
 def find_libs_new(binary: str, search: str):
     from auditwheel.lddtree import ldd
     libs = ldd(binary).libraries
+    libs = {lib: info for lib, info in libs.items() if info is not None and info.realpath is not None}
     return {lib: info for lib, info in libs.items() if search in info.realpath.as_posix()}
     
     
