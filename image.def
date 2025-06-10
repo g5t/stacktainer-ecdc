@@ -4,13 +4,13 @@ From: debian:12
 %arguments
 efu_branch="master"
 efu_remote="https://github.com/ess-dmsc/event-formation-unit.git"
-efu_revision="0dada56"
+efu_revision="6a19401"
 writer_branch="main"
 writer_remote="https://gitlab.esss.lu.se/ecdc/ess-dmsc/kafka-to-nexus.git"
 writer_revision="70e1101"
 forwarder_branch="splitrun"
 forwarder_remote="https://github.com/g5t/ess-forwarder.git@splitrun"
-forwader_revision="33d109"
+forwader_revision="1246a3"
 
 
 %files
@@ -34,6 +34,11 @@ cmake --build /efu/build --target allefus -j
 /root/.local/pipx/venvs/auditwheel/bin/python /copylibs.py -o /lib/ -d conan /efu/build/bin/*
 mv /efu/build/bin/* /usr/bin/.
 
+mkdir -p /usr/share/efu
+cd /efu/src/modules && find -type f -name "*.json" -exec cp --parents "{}" /usr/share/efu \;
+cd /
+
+
 git clone -b {{ writer_branch }} --depth 1 {{ writer_remote}} /writer/repo
 cmake -S /writer/repo -B /writer/build -DCMAKE_BUILD_TYPE=Release
 cmake --build /writer/build --target kafka-to-nexus file-maker template-maker -j
@@ -52,7 +57,7 @@ export EFU_VERSION={{ efu_branch }}-{{ efu_revision }}
 export FILEWRITER_VERSION={{ writer_branch }}-{{ writer_revision }}
 
 %labels
-Version 1.0
+Version 1.1
 
 %help
 Data collection utilities for the European Spallation Source.
