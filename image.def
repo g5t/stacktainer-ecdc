@@ -1,6 +1,9 @@
 Bootstrap: docker
 From: debian:12
 
+%labels
+Version 2.0
+
 %arguments
 efu_branch="master"
 efu_remote="https://github.com/ess-dmsc/event-formation-unit.git"
@@ -37,8 +40,8 @@ cmake --build /efu/build --target allefus -j
 /root/.local/pipx/venvs/auditwheel/bin/python /copylibs.py -o /lib/ -d conan /efu/build/bin/*
 mv /efu/build/bin/* /usr/bin/.
 
-mkdir -p /usr/share/efu
-cd /efu/src/modules && find -type f -name "*.json" -exec cp --parents "{}" /usr/share/efu \;
+mkdir -p /etc/efu
+cd /efu/repo/src/modules && find -type f -name "*.json" -exec cp --parents "{}" /etc/efu \;
 cd /
 
 
@@ -58,9 +61,6 @@ apt clean
 export LC_ALL=C
 export EFU_VERSION={{ efu_branch }}-{{ efu_revision }}
 export FILEWRITER_VERSION={{ writer_branch }}-{{ writer_revision }}
-
-%labels
-Version 1.1
 
 %help
 Data collection utilities for the European Spallation Source.
