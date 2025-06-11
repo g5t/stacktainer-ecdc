@@ -2,7 +2,7 @@ Bootstrap: docker
 From: debian:12
 
 %labels
-Version 2.0
+Version 1.2
 
 %arguments
 efu_branch="master"
