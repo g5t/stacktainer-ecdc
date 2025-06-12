@@ -4,14 +4,13 @@ From: almalinux:9
 %arguments
 efu_name="event-formation-unit"
 efu_branch="master"
-efu_revision="74ca8e3"
+efu_revision="3221b94"
 efu_remote="https://github.com/ess-dmsc/event-formation-unit"
 writer_name="kafka-to-nexus"
 writer_branch="main"
 writer_revision="70e1101"
-forwarder_branch="splitrun"
+streaming_remote="https://github.com/g5t/python-streaming-data-types.git@numpy-2"
 forwarder_remote="https://github.com/g5t/ess-forwarder.git@splitrun"
-forwarder_revision="a2fc85"
 
 
 %post
@@ -29,7 +28,7 @@ function grab_ecdc_release() {
 
 dnf install -y jq git libxcrypt-compat python3.12 python3.12-pip which
 ln -s $(which python3.12) /usr/bin/python
-python -m pip install --break-system-packages git+{{ forwarder_remote }}
+python -m pip install --break-system-packages git+{{ streaming_remote }} git+{{ forwarder_remote }}
 
 # use the ECDC provided binaries instead of building them
 grab_ecdc_release {{ efu_name }} {{ efu_branch }}
