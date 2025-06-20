@@ -8,7 +8,7 @@ efu_revision="3221b94"
 efu_remote="https://github.com/ess-dmsc/event-formation-unit"
 writer_name="kafka-to-nexus"
 writer_branch="main"
-writer_revision="70e1101"
+writer_revision="2230596"
 streaming_remote="https://github.com/g5t/python-streaming-data-types.git@numpy-2"
 forwarder_remote="https://github.com/g5t/ess-forwarder.git@splitrun"
 
