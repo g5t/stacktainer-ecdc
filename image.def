@@ -4,7 +4,7 @@ From: almalinux:9
 %arguments
 efu_name="event-formation-unit"
 efu_branch="master"
-efu_revision="3221b94"
+efu_revision="44bc067"
 efu_remote="https://github.com/ess-dmsc/event-formation-unit"
 writer_name="kafka-to-nexus"
 writer_branch="main"
@@ -15,11 +15,14 @@ forwarder_remote="https://github.com/g5t/ess-forwarder.git@splitrun"
 
 %post
 function grab_ecdc_release() {
-  info=$(curl -sS https://artifactory.esss.lu.se/artifactory/api/storage/ecdc-generic-release/$1/$2?lastModified | jq .uri | xargs curl -sS)
+  arti="https://artifactory.esss.lu.se/artifactory"
+  repo=ecdc-generic-release
+  dist=almalinux9
+  info=$(curl -sS "${arti}/api/search/artifact?name=$1-*-${dist}*&repos=${repo}" | jq .results[-1].uri | xargs curl -sS)
   uri=$(echo $info | jq .uri)
-  if [[ "${uri}" != *"centos7.tar.gz" ]]
+  if [[ "${uri}" != *".tar.gz" ]]
   then
-    echo "Expected filename to end in 'centos7.tar.gz', not ${uri}"
+    echo "Expected filename to end in 'tar.gz', not ${uri}"
   fi
   # verify one of info.checksums.sha1, info.checksums.md5, info.checksums.sha256?
   echo $info | jq .downloadUri | xargs curl -s -L | tar xfz -
@@ -31,9 +34,9 @@ ln -s $(which python3.12) /usr/bin/python
 python -m pip install --break-system-packages git+{{ streaming_remote }} git+{{ forwarder_remote }}
 
 # use the ECDC provided binaries instead of building them
-grab_ecdc_release {{ efu_name }} {{ efu_branch }}
+grab_ecdc_release {{ efu_name }}
 # and the ECDC provided binaries for the file writer too
-grab_ecdc_release {{ writer_name }} {{ writer_branch }}
+grab_ecdc_release {{ writer_name }}
 
 # clone the EFU repo to grab module configuration files
 git clone -b {{ efu_branch }} --depth 1 {{ efu_remote }} /efu
