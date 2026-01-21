@@ -4,11 +4,11 @@ From: almalinux:9
 %arguments
 efu_name="event-formation-unit"
 efu_branch="master"
-efu_revision="44bc067"
+efu_revision="6418ea63"
 efu_remote="https://github.com/ess-dmsc/event-formation-unit"
 writer_name="kafka-to-nexus"
 writer_branch="main"
-writer_revision="2230596"
+writer_revision="40eb6691"
 streaming_remote="https://github.com/g5t/python-streaming-data-types.git@numpy-2"
 forwarder_remote="https://github.com/g5t/ess-forwarder.git@splitrun"
 
@@ -18,10 +18,12 @@ function grab_ecdc_release() {
   arti="https://artifactory.esss.lu.se/artifactory"
   repo=ecdc-generic-release
   dist=almalinux9
-  info=$(curl -sS "${arti}/api/search/artifact?name=$1-*-${dist}*&repos=${repo}" | jq .results[-1].uri | xargs curl -sS)
+  info=$(curl -sS "${arti}/api/search/artifact?name=$1-$2-${dist}*&repos=${repo}" | jq .results[-1].uri | xargs curl -sS)
   uri=$(echo $info | jq .uri)
-  if [[ "${uri}" != *".tar.gz" ]]
+  if [[ "${uri}" =~ \.tar\.gz[\"]?$ ]]
   then
+    echo "Filename ends in 'tar.gz' as expected"
+  else
     echo "Expected filename to end in 'tar.gz', not ${uri}"
   fi
   # verify one of info.checksums.sha1, info.checksums.md5, info.checksums.sha256?
@@ -34,9 +36,9 @@ ln -s $(which python3.12) /usr/bin/python
 python -m pip install --break-system-packages git+{{ streaming_remote }} git+{{ forwarder_remote }}
 
 # use the ECDC provided binaries instead of building them
-grab_ecdc_release {{ efu_name }}
+grab_ecdc_release {{ efu_name }} {{ efu_revision}}
 # and the ECDC provided binaries for the file writer too
-grab_ecdc_release {{ writer_name }}
+grab_ecdc_release {{ writer_name }} {{ writer_revision }}
 
 # clone the EFU repo to grab module configuration files
 git clone -b {{ efu_branch }} --depth 1 {{ efu_remote }} /efu
@@ -52,7 +54,7 @@ export LC_ALL=C
 export PYTHONPATH=/usr/local/lib/python3.12/site-packages/:/usr/local/lib64/python3.12/site-packages
 export EFU_VERSION={{ efu_branch }}-{{ efu_revision }}
 export FILEWRITER_VERSION={{ writer_branch }}-{{ writer_revision }}
-export PATH=$PATH:/{{ efu_name }}/bin:/{{ writer_name }}/bin
+export PATH=$PATH:/{{ efu_name }}/bin:{{ efu_name }}/util/efushell/:/{{ writer_name }}/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/{{ efu_name }}/lib
 
 %help
@@ -68,8 +70,20 @@ Event Formation Unit binaries:
 	nmx      - the macromollecular single crystal diffractometer, NMX
 	timepix3 - the TimePix3 clustering photon imaging detector, used at ODIN
 	trex     - the direct geometry time-of-flight spectrometer, TREX
+Event Formation Unit shell utilities:
+	efubriefstat.py  - query a running EFU for statistics
+	efucalibmode.py  - set or query the EFU calibration mode value
+	efurates.py      - print rates change of EFU counters
+	efustats.py      - print all EFU counters
+	efustatstocsv.py - produce a CSV file of EFU counters
+	efustatus.py     - print the status of a running EFU
+	getstat.py       - print the value of a specified counter
+	isefurunning.py  - check if an EFU is running
+	verifymetrics.py - compare an EFU counter value to a specified value
 File Writer binaries:
 	kafkfa-to-nexus - the worker responsible for writing streams to NeXus files
+	file-maker      - convert NeXusStructure JSON and flatbuffer data to NeXus HDF5
+	template-maker  - convert NeXusStructure JSON to template NeXus HDF5
 EPICS to Kafka forwarder programs:
 	forwarder-launch - create the process to send EPICS updates to a Kafka server
 
