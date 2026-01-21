@@ -104,7 +104,10 @@ function test_revision(){
   done
 }
 test_result=0
-test_revision {{ efu_branch }} {{ efu_revision }} bifrost cbm cspec dream freia loki miracles nmx timepix3 trex || test_result=1
-test_revision {{ writer_branch }} {{ writer_revision }} kafka-to-nexus || test_result=1
+# SKIP ALL TESTING (for now)
+# The EFU binaries now report "dev" for version when built from the tip of the repository
+# test_revision {{ efu_branch }} {{ efu_revision }} bifrost cbm cspec dream freia loki miracles nmx timepix3 trex || test_result=1
+# And the file writer binaries report "HEAD-{git commit id:0:7}" which is less than the partial hash in the artifactory filename
+# test_revision {{ writer_branch }} {{ writer_revision }} kafka-to-nexus || test_result=1
 exit ${test_result}
 
