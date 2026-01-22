@@ -54,7 +54,7 @@ export LC_ALL=C
 export PYTHONPATH=/usr/local/lib/python3.12/site-packages/:/usr/local/lib64/python3.12/site-packages
 export EFU_VERSION={{ efu_branch }}-{{ efu_revision }}
 export FILEWRITER_VERSION={{ writer_branch }}-{{ writer_revision }}
-export PATH=$PATH:/{{ efu_name }}/bin:{{ efu_name }}/util/efushell/:/{{ writer_name }}/bin
+export PATH=$PATH:/{{ efu_name }}/bin:/{{ efu_name }}/util/efushell/:/{{ writer_name }}/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/{{ efu_name }}/lib
 
 %help
