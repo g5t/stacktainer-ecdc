@@ -3,48 +3,48 @@ From: almalinux:9
 
 %arguments
 efu_name="event-formation-unit"
-efu_branch="master"
-efu_revision="6418ea63"
-efu_remote="https://github.com/ess-dmsc/event-formation-unit"
+# The artifactory artifact. A release tag or a git revision; ecdc-fetch.py takes
+# either. Tags live under .../event-formation-unit/tags/<tag>/ rather than a
+# branch directory, which is why there is no longer a branch argument here.
+efu_revision="3.1.0"
+# The git ref the JSON module configurations are cloned from. Keep it equal to
+# efu_revision: the configs then come from the same commit the binaries were
+# built at, which they did not when this tracked master. Tag 3.1.0 peels to
+# 51fb108d, the revision artifactory built as master build 2042.
+efu_ref="3.1.0"
+# GitHub's mirror is not syncing; the in-house GitLab is authoritative.
+efu_remote="https://gitlab.esss.lu.se/ecdc/ess-dmsc/event-formation-unit.git"
 writer_name="kafka-to-nexus"
-writer_branch="main"
-writer_revision="40eb6691"
+writer_revision="6.4.6"
 streaming_remote="https://github.com/g5t/python-streaming-data-types.git@numpy-2"
 forwarder_remote="https://github.com/g5t/ess-forwarder.git@splitrun"
+ecdc_dist="almalinux9"
 
+
+%files
+ecdc-fetch.py /opt/ecdc-fetch.py
 
 %post
-function grab_ecdc_release() {
-  arti="https://artifactory.esss.lu.se/artifactory"
-  repo=ecdc-generic-release
-  dist=almalinux9
-  info=$(curl -sS "${arti}/api/search/artifact?name=$1-$2-${dist}*&repos=${repo}" | jq .results[-1].uri | xargs curl -sS)
-  uri=$(echo $info | jq .uri)
-  if [[ "${uri}" =~ \.tar\.gz[\"]?$ ]]
-  then
-    echo "Filename ends in 'tar.gz' as expected"
-  else
-    echo "Expected filename to end in 'tar.gz', not ${uri}"
-  fi
-  # verify one of info.checksums.sha1, info.checksums.md5, info.checksums.sha256?
-  echo $info | jq .downloadUri | xargs curl -s -L | tar xfz -
-  # move bin and lib contents to system dirs, remove remaining folder
-}
 
 dnf install -y jq git libxcrypt-compat python3.12 python3.12-pip which
 ln -s $(which python3.12) /usr/bin/python
 python -m pip install --break-system-packages git+{{ streaming_remote }} git+{{ forwarder_remote }}
 
-# use the ECDC provided binaries instead of building them
-grab_ecdc_release {{ efu_name }} {{ efu_revision}}
-# and the ECDC provided binaries for the file writer too
-grab_ecdc_release {{ writer_name }} {{ writer_revision }}
+# Use the ECDC provided binaries instead of building them. ecdc-fetch.py takes a
+# git revision or a release tag alike -- whatever sits between the package name
+# and the distribution in the artifact filename -- and fails loudly if it does not
+# resolve to exactly one artifact. The shell function this replaced piped an empty
+# result into tar and, with no `set -e` here, left an image with no binaries in it.
+python /opt/ecdc-fetch.py --dist {{ ecdc_dist }} {{ efu_name }} {{ efu_revision }}
+python /opt/ecdc-fetch.py --dist {{ ecdc_dist }} {{ writer_name }} {{ writer_revision }}
 
 # clone the EFU repo to grab module configuration files
-git clone -b {{ efu_branch }} --depth 1 {{ efu_remote }} /efu
+git clone -b {{ efu_ref }} --depth 1 {{ efu_remote }} /efu
 cd /efu/src/modules && find -type f -name "*.json" -exec cp --parents "{}" /{{ efu_name }}/configs/ \;
 cd /
 rm -rf /efu
+
+rm -f /opt/ecdc-fetch.py
 
 dnf clean all
 
@@ -52,8 +52,8 @@ dnf clean all
 %environment
 export LC_ALL=C
 export PYTHONPATH=/usr/local/lib/python3.12/site-packages/:/usr/local/lib64/python3.12/site-packages
-export EFU_VERSION={{ efu_branch }}-{{ efu_revision }}
-export FILEWRITER_VERSION={{ writer_branch }}-{{ writer_revision }}
+export EFU_VERSION={{ efu_revision }}
+export FILEWRITER_VERSION={{ writer_revision }}
 export PATH=$PATH:/{{ efu_name }}/bin:/{{ efu_name }}/util/efushell/:/{{ writer_name }}/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/{{ efu_name }}/lib
 
@@ -106,8 +106,8 @@ function test_revision(){
 test_result=0
 # SKIP ALL TESTING (for now)
 # The EFU binaries now report "dev" for version when built from the tip of the repository
-# test_revision {{ efu_branch }} {{ efu_revision }} bifrost cbm cspec dream freia loki miracles nmx timepix3 trex || test_result=1
+# test_revision {{ efu_revision }} bifrost cbm cspec dream freia loki miracles nmx timepix3 trex || test_result=1
 # And the file writer binaries report "HEAD-{git commit id:0:7}" which is less than the partial hash in the artifactory filename
-# test_revision {{ writer_branch }} {{ writer_revision }} kafka-to-nexus || test_result=1
+# test_revision {{ writer_revision }} kafka-to-nexus || test_result=1
 exit ${test_result}
 
